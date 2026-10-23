@@ -1,0 +1,49 @@
+/*
+ * Design tokens. Re-skin the whole site from here (e.g. when the Handsome Dan assets are added).
+ * Yale Blue #00356B is the official primary; the rest are supporting neutrals and status colors.
+ */
+:root {
+  --yale-blue: #00356b;
+  --yale-blue-dark: #00254a;
+  --yale-blue-mid: #286dc0;
+  --yale-blue-light: #e8eff8;
+  --yale-blue-tint: #f3f6fb;
+
+  --white: #ffffff;
+  /* Problem 10: Handsome Dan's sheet colours. Poses keep this cream background, so it frames them everywhere. */
+  --dan-cream: #f6efe4;
+  --dan-cream-deep: #ece2d1;
+  --dan-gold: #c49a3a;
+  --ink: #16202c;
+  --ink-soft: #4a5565;
+  --ink-muted: #6b7584;
+  --line: #dde3ea;
+  --line-strong: #c3ccd6;
+  --surface: #ffffff;
+  --surface-alt: #f6f7f9;
+
+  --success: #1f7a4d;
+  --success-bg: #e6f4ec;
+  --warning: #8a5300;
+  --warning-bg: #fff3dc;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(16 32 56 / 0.06);
+  --shadow: 0 6px 20px rgb(16 32 56 / 0.08);
+  --shadow-lg: 0 18px 50px rgb(16 32 56 / 0.18);
+
+  --container: 1200px;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --header-height: 72px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
