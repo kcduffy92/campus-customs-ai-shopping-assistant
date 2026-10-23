@@ -1301,3 +1301,6 @@ _None yet._
   - the `.env.example` placeholder;
   - a deliberately fake cookie in a test;
   - an example address quoted in the Problem 12 prompt, kept verbatim.
+- The first push failed on a temporary network error ("Could not resolve host: github.com") after the repository
+  was created. It succeeded on retry. The published repository was then verified through the GitHub API and
+  signed-out public downloads.
