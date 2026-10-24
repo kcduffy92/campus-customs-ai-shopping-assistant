@@ -181,7 +181,26 @@ _No follow-up prompts recorded yet._
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+The database was inspected read-only (its checksum still matched the course zip afterwards). It turned up several
+things the later problems had to account for. All are documented in `output/design.md`, section 1.7:
+
+- **Four tables:** `catalogue` (102 products), `inventory` (612 rows, one per product and size), `users` (3 accounts)
+  and `chat_messages` (22 saved messages). There are no order, cart or reservation tables, which is one reason the
+  store has no checkout.
+- **Inconsistent categories and colors:** 22 different `garment_type` spellings for about 7 real categories, and 22
+  color names (e.g. "navy" vs "navy blue", "gray" vs "heather gray"). Colors and search tags are stored as JSON text.
+  Problem 3 grouped these in code (6 categories, 9 color groups) without changing the database.
+- **Sold-out inventory:** 145 of the 612 size slots (about 24%) were sold out, so the site and the assistant always
+  have to check `inventory` before calling anything available.
+- **Password hashing format:** hashes are stored as `pbkdf2_sha256$salt$digest` with no iteration count. The existing
+  accounts couldn't be verified until the professor's hashing settings arrived in Problem 4 (Follow-up 1).
+- **Smaller points:**
+  - foreign keys aren't enforced by default (the backend now turns them on for every connection);
+  - email uniqueness is case-sensitive;
+  - timestamps are UTC without a timezone marker;
+  - product names are mechanically title-cased ("1 4 Zip");
+  - 10 images aren't square;
+  - the database holds personal data, which is kept out of Git.
 ---
 
 ## Problem 3 — Building the Campus Customs Website
@@ -277,7 +296,22 @@ _No follow-up prompts recorded yet._
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+The site was built and then tested in the browser. All 102 products' prices, images and stock were checked against
+the API and the database, and the navigation, the phone layout and the chat widget were tested too. Testing turned
+up a few problems that were fixed before handing over:
+
+- **Product image framing:** many product photos have black backgrounds and sat inside gray padding. They now fill
+  their frames.
+- **Category layout:** the six category tiles left one tile stranded on a second row. The grid was fixed.
+- **Low-stock labels:** a "Low stock" badge appeared on almost every product card, so it was removed from the cards.
+  Exact stock for each size is still shown on product pages.
+- **Mobile filters:** on phones the filter panel now starts collapsed, so products are visible first.
+- **TypeScript/Vite configuration:** `vite.config.ts` used Node's `process` without Node type definitions, which broke
+  the type check. It now uses Vite's own `loadEnv` instead of adding another package.
+- **Backend root URL:** `/` returned a 404. It now returns a small response.
+
+The website footer also gained a statement that the store isn't affiliated with Yale. Nothing supported that, so it
+was removed in Problem 6.
 ---
 
 ## Problem 4 — Customer Accounts: Registration, Login, and Logout
@@ -441,7 +475,26 @@ _No follow-up prompts recorded yet._
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+The assistant was connected and tested through the website. The tests covered:
+- real AI replies and memory within a chat;
+- greeting signed-in customers by first name;
+- clear errors with a Try again button;
+- the phone layout;
+- the Portkey key never reaching the browser.
+
+Testing found these problems, all fixed and retested:
+
+- **Provider content filter:** the provider behind Portkey (Azure OpenAI) blocked a prompt-injection test with its own
+  content filter, which the website showed as "assistant unavailable". Those messages now get a polite in-character
+  redirect back to shopping.
+- **Revealing too much about its instructions:** asked to summarize its rules, the assistant gave a high-level summary
+  of its instructions. The prompt now forbids describing or paraphrasing them, even partially.
+- **Suggesting products it hadn't verified:** it implied that a "Yale Law" design existed, before it could look
+  anything up. It now suggests searching the Shop page instead.
+- **Welcome message:** the chat's welcome said the assistant could "check which sizes are in stock", which wasn't
+  true until Problem 6. It was reworded.
+- **Error wording:** the chat's error messages were too generic. They now say the assistant is unavailable or give
+  the specific reason.
 ---
 
 ## Problem 6 — Product and Inventory Tools for the Assistant
@@ -508,7 +561,22 @@ _No follow-up prompts recorded yet._
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+Both tools were tested through the website, and every price, color and stock answer was compared with direct
+database queries. The inventory tool was also checked against all 612 size rows, with no mismatches. Testing found:
+
+- **Combined products and shortened names:** the sweatshirt overview merged two products into one line, dropped some
+  of their colors and shortened another product's name. The prompt now requires exact names, one product per line and
+  complete color lists. Retested and correct.
+- **Checkout assumption:** "I'd like to buy it, can I?" got "Yes!" without saying that online checkout isn't
+  available. Fixed and retested.
+- **Contact information:** the assistant suggested contacting the store, but the site has no contact details. Fixed.
+- **Yale affiliation:** the prompt (and the website footer from Problem 3) stated that the store isn't affiliated
+  with Yale, which nothing in the assignment or the data supports. Both statements were removed. The assistant now
+  says it has no information either way, and the footer reads "Built as a course project for AI Foundations."
+- **Search matching:** word-fragment matching could have read "between" as "tee" or "embroidered" as "red". This was
+  caught and fixed before the website tests.
+- The design themes and "common colors" that the prompt listed from memory were removed, since the tools now look
+  these up.
 ---
 
 ## Problem 7 — Product Cards in the Shopping Assistant
@@ -575,7 +643,26 @@ _No follow-up prompts recorded yet._
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+Most of the work here was making sure the cards met the requirements. Every check passed:
+
+- **Verified database information only:** the model only chooses product ids. The backend builds each card from the
+  database and drops any id that a tool didn't return in that conversation or that isn't in the catalogue. Every
+  distinct card shown in 13 website chats matched the database (product, name, price, image and stock line), and the
+  drop guard passed 10/10 direct checks.
+- **Sold-out sizes:** answers about a size show only products in stock in that size. For example, the Fencing hoodie
+  (L sold out) and three tees (M sold out) were correctly left out. A product the customer names in a sold-out size
+  is still shown, marked "XXL sold out".
+- **Conversation continuity:** the browser sends back which cards it showed, so "tell me more about the second one"
+  picks the right product. Clicking a card opens the product page without losing the chat. It stays open on a
+  computer, and on a phone it tucks away and comes back with the same conversation.
+- **Not app bugs:** two problems seen during testing turned out to be quirks of the testing tool.
+  - Card images reported "not loaded" because the hidden preview pane delayed lazy loading; the image files
+    themselves returned normally.
+  - A card tap that didn't navigate was the tool's missed first click; a direct click opened the product page.
+- "School Of Architecture Crewneck" appearing among quarter-zips looked wrong, but the database lists it as a
+  quarter-zip.
+- **Unnecessary search after a greeting:** the assistant sometimes ran a product search after small talk such as
+  "thanks". No cards appeared, but the reply was slower. This was noted as a limitation and fixed in Problem 9.
 ---
 
 ## Problem 8 — Customer Memory and Page Context
@@ -768,7 +855,31 @@ resent the summary.)_
 
 ### What was missing or needed improvement
 
-_Nothing recorded yet._
+- **Network and Portkey issues during testing:**
+  - The baseline benchmark hit a burst of failed requests during brief local network drops (DNS lookups failing),
+    which led to Follow-up 1. The measurement was rerun once the connection was back.
+  - A "minimal" reasoning setting was rejected by the model behind Portkey, so the fast times from that run weren't
+    real and were discarded.
+  - One request hung for 113 seconds. That led to new timeouts: 25 seconds per request, with a 50-second cap.
+- **Where the time went:** each request to the AI model took 2–3.5 seconds, while all database work took under 40 ms.
+  Answers were slow because of how many model requests they needed, not because of the database.
+- **Improvements, based on that finding:**
+  - accurate progress messages from the steps that really run;
+  - easier conversation navigation: better titles, topic tags, previews, date groups, search, and up to 200
+    conversations instead of 50;
+  - no product searches for pure small talk;
+  - size questions answered in one tool step.
+
+  Greetings and "thanks" became about 60% faster and size questions 20–28% faster. Model requests per
+  7-question round went from 16 to 12.
+- **Smaller display issues fixed during testing:**
+  - a stock status that flashed by in about 10 ms now stays on screen for at least 0.7 seconds;
+  - fade-in animations sometimes left the chat panel see-through (which also explained odd screenshots in Problems
+    7 and 8);
+  - "navy / t-shirts" now reads "navy t-shirts";
+  - the chat header was shortened on phones.
+- Follow-up 2 ("Try again") came after the final summary. The app and documentation were confirmed to be in place
+  and the summary was resent.
 ---
 
 ## Problem 10 — Visual Design and Handsome Dan
@@ -1289,7 +1400,41 @@ And please don't submit anything to Yale's course platform on my behalf. I'll ha
 
 ### Follow-up prompts
 
-_None yet._
+#### Follow-up 1
+
+```text
+Okay, I think we're finally at the last cleanup for Homework 4!
+
+I was going through AI_prompts.md and noticed that the sections about what was missing or needed improvement are still blank for Problems 2, 3, 5, 6, 7, and 9.
+
+We already worked through all of these problems, and you documented the issues you found and fixed along the way, so I don't want to redo anything. I just want those sections completed based on what actually happened.
+
+Here's what I want included:
+
+**Problem 2:** We discovered the four database tables, inconsistencies in product categories and colors, sold-out inventory, and the password hashing format. These were important things to account for in the later problems.
+
+**Problem 3:** There were some issues with product image framing, the category layout, low-stock labels, mobile filters, and the TypeScript/Vite configuration that you fixed during testing.
+
+**Problem 5:** We had issues with the provider's content filter, the assistant revealing too much about its instructions, suggesting products it hadn't verified, and the welcome message claiming it could check inventory before we'd built that functionality.
+
+**Problem 6:** The assistant was combining products, shortening names, missing colors, and making assumptions about checkout, contact information, and Yale affiliation. We also corrected the search matching.
+
+**Problem 7:** We had to make sure the product cards only displayed verified database information, handled sold-out sizes correctly, and maintained conversation continuity. There was also an unnecessary search triggered by a greeting.
+
+**Problem 9:** We had some network and Portkey issues during testing. We found that model requests were causing most of the delays, so we improved response times, progress messages, conversation navigation, and unnecessary searches. There were also a few smaller display issues that got fixed.
+
+Please use the actual development history and documentation to fill in those six sections. Keep the explanations clear and in the same style as the rest of the file.
+
+Don't change any of my original prompts or make up follow-up requests. If you identified and fixed something yourself during testing, just explain that in the improvement section.
+
+Everything else in AI_prompts.md should stay exactly as it is.
+
+Once you've finished, double-check that all 13 problems are included and nothing has been accidentally changed or removed.
+
+Then commit and push the updated AI_prompts.md to our existing Homework 4 GitHub repository. No need to change any other files or application code.
+
+Just let me know when it's updated and give me the new commit ID.
+```
 
 ### What was missing or needed improvement
 
@@ -1304,3 +1449,5 @@ _None yet._
 - The first push failed on a temporary network error ("Could not resolve host: github.com") after the repository
   was created. It succeeded on retry. The published repository was then verified through the GitHub API and
   signed-out public downloads.
+- Follow-up 1 pointed out that the improvement notes for Problems 2, 3, 5, 6, 7 and 9 were still blank. They were
+  filled in from the project documentation and the development history. No prompts were changed.
